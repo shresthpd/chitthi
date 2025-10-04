@@ -1,9 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import assets, { userDummyData } from "../assets/assets.js";
 import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter users based on search query
+  const filteredUsers = userDummyData.filter(user => 
+    user.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="h-full flex flex-col p-5 bg-transparent">
@@ -16,7 +22,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
           <img
             src={assets.menu_icon}
             alt="menu_icon"
-            className="w-8 cursor-pointer"
+            className="w-8 cursor-pointer hover:opacity-80 transition-opacity"
           />
           <div
             className="absolute right-0 mt-2 w-48 bg-slate-900/70 backdrop-blur-md rounded-lg shadow-xl z-10 p-2
@@ -40,7 +46,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
       </div>
 
       {/* Search */}
-      <div className="mt-4 flex items-center gap-2 bg-[#282142] rounded-full p-2">
+      <div className="mt-4 flex items-center gap-2 bg-[#282142] rounded-full p-2 focus-within:ring-2 focus-within:ring-violet-400/50 transition-all">
         <img
           src={assets.search_icon}
           alt="Search"
@@ -49,42 +55,56 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
         <input
           type="text"
           placeholder="Search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="outline-none bg-transparent w-full text-white placeholder:text-gray-400"
         />
+        {searchQuery && (
+          <button 
+            onClick={() => setSearchQuery("")}
+            className="text-gray-400 hover:text-white text-xs"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* User List */}
       <div className="flex-1 flex flex-col mt-4 overflow-y-auto">
-        {userDummyData.map((user, index) => (
-          <div
-            key={index}
-            onClick={() => setSelectedUser(user)}
-            className={`flex items-center gap-3 p-2 cursor-pointer hover:bg-slate-700/50 rounded-lg ${
-              selectedUser?._id === user._id && "bg-[#282142]/50"
-            }`}
-          >
-            <img
-              src={user?.profilePic || assets.avatar_icon}
-              alt=""
-              className="w-10 aspect-square rounded-full cursor-pointer hover:opacity-80"
-            />
-            <div className="flex flex-col leading-5">
-              <p className="text-white text-sm font-semibold">
-                {user.fullName}
-              </p>
-              {index < 3 ? (
-                <span className="text-green-400 text-xs">Online</span>
-              ) : (
-                <span className="text-neutral-400 text-xs">Offline</span>
+        {filteredUsers.length === 0 ? (
+          <p className="text-gray-400 text-center mt-4">No users found</p>
+        ) : (
+          filteredUsers.map((user, index) => (
+            <div
+              key={index}
+              onClick={() => setSelectedUser(user)}
+              className={`flex items-center gap-3 p-2 cursor-pointer hover:bg-slate-700/50 rounded-lg transition-colors ${
+                selectedUser?._id === user._id ? "bg-[#282142]/50" : ""
+              }`}
+            >
+              <img
+                src={user?.profilePic || assets.avatar_icon}
+                alt=""
+                className="w-10 aspect-square rounded-full cursor-pointer hover:opacity-80"
+              />
+              <div className="flex flex-col leading-5">
+                <p className="text-white text-sm font-semibold">
+                  {user.fullName}
+                </p>
+                {index < 3 ? (
+                  <span className="text-green-400 text-xs">Online</span>
+                ) : (
+                  <span className="text-neutral-400 text-xs">Offline</span>
+                )}
+              </div>
+              {index >= 2 && (
+                <p className="bg-violet-500 h-5 w-5 rounded-full flex justify-center items-center text-white text-xs ml-auto mr-2">
+                  {index}
+                </p>
               )}
             </div>
-            {index >= 2 && (
-              <p className="bg-violet-500 h-5 w-5 rounded-full flex justify-center items-center text-white text-xs ml-auto mr-2">
-                {index}
-              </p>
-            )}
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
