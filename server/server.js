@@ -4,9 +4,36 @@ import "dotenv/config";
 import http from "http";
 import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
+import messageRouter from "./routes/messageRoutes.js";
+import { Server } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
+
+// socket.io initialization
+export const io = new Server(serve, {
+  cors: {
+    origin: "*",
+  },
+});
+
+// store online users
+export const userSocketMap = {};
+
+// socket.io connection handeler
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId;
+  console.log("user connected", userId);
+  if (userId) userSocketMap[userId] = socket.id;
+
+  // emit online users to all connected clients
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  socket.on("disconnect", () => {
+    console.log("User Connected", userId);
+    delete userSocketMap[userId];
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+});
 
 // middlewares
 app.use(express.json({ limit: "5mb" }));
@@ -15,6 +42,7 @@ app.use(cors());
 // routes
 app.use("/api/status", (req, res) => res.send("Server is Running"));
 app.use("/api/auth", userRouter);
+app.use("/api/messages", messageRouter);
 
 //connect to  db
 await connectDB();
