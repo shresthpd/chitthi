@@ -1,5 +1,6 @@
 import cloudinary from "../lib/cloudinary.js";
 import Message from "../models/Message.js";
+import User from "../models/User.js";
 import { io, userSocketMap } from "../server.js";
 
 // get all users except the logged in user
@@ -26,7 +27,8 @@ export const getUsersForSidebar = async (req, res) => {
       unseenMessages,
     });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error("getUsersForSidebar error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -35,6 +37,9 @@ export const getMessages = async (req, res) => {
   try {
     const { id: selectedUserId } = req.params;
     const myId = req.user._id;
+    if (!selectedUserId) {
+      return res.status(400).json({ success: false, message: "Selected user id is required" });
+    }
     const messages = await Message.find({
       $or: [
         { senderId: myId, receiverId: selectedUserId },
@@ -52,7 +57,8 @@ export const getMessages = async (req, res) => {
     );
     res.json({ success: true, messages });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error("getMessages error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -60,16 +66,36 @@ export const getMessages = async (req, res) => {
 export const markMessageSeen = async (req, res) => {
   try {
     const { id } = req.params;
-    await Message.findByIdAndUpdate(id, { seen: true });
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Message id is required" });
+    }
+    const updated = await Message.findByIdAndUpdate(id, { seen: true });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Message not found" });
+    }
     res.json({ success: true });
-  } catch (error) {}
+  } catch (error) {
+    console.error("markMessageSeen error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // send message to selected user
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
-    const receiverId = erq.params.id;
+    const receiverId = req.params.id;
+    if (!receiverId) {
+      return res.status(400).json({ success: false, message: "Receiver id is required" });
+    }
+    if (!text && !image) {
+      return res.status(400).json({ success: false, message: "Message content is required (text or image)" });
+    }
+    const receiverExists = await User.exists({ _id: receiverId });
+    if (!receiverExists) {
+      return res.status(404).json({ success: false, message: "Receiver not found" });
+    }
+
     const senderId = req.user._id;
     let imageUrl;
     if (image) {
@@ -90,5 +116,8 @@ export const sendMessage = async (req, res) => {
     }
 
     res.json({ success: true, newMessage });
-  } catch (error) {}
+  } catch (error) {
+    console.error("sendMessage error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

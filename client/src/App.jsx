@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/LoginPage";
-import ProfilePage from "./pages/ProfilePage";
+import HomePage from "./pages/HomePage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 import bgImage from "./assets/bgimage.svg";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -13,7 +14,7 @@ const App = () => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 800);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -35,6 +36,7 @@ const App = () => {
       }}
       className="min-h-screen w-full bg-black bg-center bg-no-repeat transition-opacity duration-500 opacity-100"
     >
+      <Toaster />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />

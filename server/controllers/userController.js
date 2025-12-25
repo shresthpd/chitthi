@@ -6,9 +6,9 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 
 export const signup = async (req, res) => {
-  const { fullname, email, password, bio } = req.body;
+  const { fullName, email, password, bio } = req.body;
   try {
-    if (!fullname || !email || !password) {
+    if (!fullName || !email || !password) {
       return res
         .status(400)
         .json({ success: false, message: "Please fill all the fields" });
@@ -31,7 +31,7 @@ export const signup = async (req, res) => {
     res.json({
       success: true,
       message: "User created successfully",
-      userData: newUser,
+      user: newUser,
       token,
     });
   } catch (error) {
@@ -43,8 +43,14 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const userData = await User.findOne({ email });
+
+    if (!userData) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid credentials" });
+    }
     const isPasswordCorrect = await bcrypt.compare(password, userData.password);
-    if (!userData || !isPasswordCorrect) {
+    if (!isPasswordCorrect) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid credentials" });
@@ -53,7 +59,7 @@ export const login = async (req, res) => {
     res.json({
       success: true,
       message: "User logged in successfully",
-      userData,
+      user: userData,
       token,
     });
   } catch (error) {

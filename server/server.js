@@ -11,14 +11,14 @@ const app = express();
 const server = http.createServer(app);
 
 // socket.io initialization
-export const io = new Server(serve, {
+export const io = new Server(server, {
   cors: {
     origin: "*",
   },
 });
 
 // store online users
-export const userSocketMap = {};
+export const userSocketMap = {}; // { userId:socketId }
 
 // socket.io connection handeler
 io.on("connection", (socket) => {
@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
   // emit online users to all connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
   socket.on("disconnect", () => {
-    console.log("User Connected", userId);
+    console.log("User disconnected", userId);
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
