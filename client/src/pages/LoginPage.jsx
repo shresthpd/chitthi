@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import assets from "../assets/assets";
+import { AuthContext } from "../../context/AuthContext";
 
-const LoginPage = () => {
+function LoginPage() {
   const [currState, setCurrState] = useState("Sign Up");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -9,11 +10,32 @@ const LoginPage = () => {
   const [bio, setBio] = useState("");
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
   const [isPrivacyPolicyChecked, setIsPrivacyPolicyChecked] = useState(false);
-  const handelSubmit = (e) => {
+  const { login, signup } = useContext(AuthContext);
+
+  const handelSubmit = async (e) => {
     e.preventDefault();
-    if (currState === "Sign Up" && !isDataSubmitted) {
-      setIsDataSubmitted(true);
+
+    if (currState === "Sign Up") {
+      if (!isDataSubmitted) {
+        setIsDataSubmitted(true);
+        return;
+      }
+      const payload = { fullName, email, password, bio };
+      const res = await signup(payload);
+      if (res?.success) {
+        setFullName("");
+        setEmail("");
+        setPassword("");
+        setBio("");
+        setIsDataSubmitted(false);
+      }
       return;
+    }
+
+    const res = await login({ email, password });
+    if (res?.success) {
+      setEmail("");
+      setPassword("");
     }
   };
 
@@ -81,16 +103,19 @@ const LoginPage = () => {
           >
             {currState === "Sign Up" ? "Create Account" : "Login Now"}
           </button>
-          <div className="flex items-center gap-2 text-sm mt-3 text-gray-300 cursor-pointer hover:text-gray-100 transition-colors">
-            <input
-              type="checkbox"
-              name=""
-              id=""
-              value={isPrivacyPolicyChecked}
-              required
-            />
-            <p>Agree to the terms of use and privacy policy</p>
-          </div>
+
+          {/* show privacy policy only for Sign Up; bind checkbox correctly */}
+          {currState === "Sign Up" && (
+            <div className="flex items-center gap-2 text-sm mt-3 text-gray-300 cursor-pointer hover:text-gray-100 transition-colors">
+              <input
+                type="checkbox"
+                checked={isPrivacyPolicyChecked}
+                onChange={(e) => setIsPrivacyPolicyChecked(e.target.checked)}
+                required
+              />
+              <p>Agree to the terms of use and privacy policy</p>
+            </div>
+          )}
           <div className="flex flex-col gap-2 mt-5">
             {currState === "Sign Up" ? (
               <p className="text-gray-400 text-sm">
@@ -124,6 +149,6 @@ const LoginPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default LoginPage;
