@@ -1,23 +1,45 @@
-import React, { useState } from "react";
-import assets, { userDummyData } from "../assets/assets.js";
+import React, { useContext, useState, useEffect } from "react";
+import assets from "../assets/assets.js";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { ChatContext } from "../../context/ChatContext.jsx";
 
-const Sidebar = ({ selectedUser, setSelectedUser }) => {
+const Sidebar = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const {
+    getUsers,
+    users,
+    selectedUser,
+    setSelectedUser,
+    unseenMessages,
+    setUnseenMessages,
+    getMessages,
+  } = useContext(ChatContext);
 
-  // Filter users based on search query
-  const filteredUsers = userDummyData.filter(user => 
-    user.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+  const { logout, onlineUsers } = useContext(AuthContext);
+
+  useEffect(() => {
+    getUsers();
+  }, [getUsers]);
+
+  // Filter users based on search query (use context users)
+  const filteredUsers = users.filter((user) =>
+    (user.fullName || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // select user -> set selected, clear unseen count, load messages
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    setUnseenMessages((prev) => ({ ...prev, [user._id]: 0 }));
+    getMessages(user._id);
+  };
 
   return (
     <div className="h-full flex flex-col p-5 bg-transparent">
-      {/* Logo + Menu */}
       <div className="flex justify-between items-center">
         <img src={assets.logo} alt="logo" className="w-40" />
 
-        {/* Menu Icon and Dropdown */}
         <div className="relative group">
           <img
             src={assets.menu_icon}
@@ -36,7 +58,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
               Edit Profile
             </div>
             <div
-              onClick={() => navigate("/login")}
+              onClick={() => logout()}
               className="block px-4 py-2 text-sm text-gray-200 rounded-md hover:bg-slate-700/50 cursor-pointer"
             >
               Logout
@@ -45,7 +67,6 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
         </div>
       </div>
 
-      {/* Search */}
       <div className="mt-4 flex items-center gap-2 bg-[#282142] rounded-full p-2 focus-within:ring-2 focus-within:ring-violet-400/50 transition-all">
         <img
           src={assets.search_icon}
@@ -60,7 +81,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
           className="outline-none bg-transparent w-full text-white placeholder:text-gray-400"
         />
         {searchQuery && (
-          <button 
+          <button
             onClick={() => setSearchQuery("")}
             className="text-gray-400 hover:text-white text-xs"
           >
@@ -69,15 +90,13 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
         )}
       </div>
 
-      {/* User List */}
       <div className="flex-1 flex flex-col mt-4 overflow-y-auto">
         {filteredUsers.length === 0 ? (
           <p className="text-gray-400 text-center mt-4">No users found</p>
         ) : (
-          filteredUsers.map((user, index) => (
+          filteredUsers.map((user) => (
             <div
-              key={index}
-              onClick={() => setSelectedUser(user)}
+              key={user._id} // updated
               className={`flex items-center gap-3 p-2 cursor-pointer hover:bg-slate-700/50 rounded-lg transition-colors ${
                 selectedUser?._id === user._id ? "bg-[#282142]/50" : ""
               }`}
@@ -91,15 +110,15 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
                 <p className="text-white text-sm font-semibold">
                   {user.fullName}
                 </p>
-                {index < 3 ? (
+                {onlineUsers?.includes?.(user._id) ? (
                   <span className="text-green-400 text-xs">Online</span>
                 ) : (
                   <span className="text-neutral-400 text-xs">Offline</span>
                 )}
               </div>
-              {index >= 2 && (
+              {unseenMessages?.[user._id] > 0 && (
                 <p className="bg-violet-500 h-5 w-5 rounded-full flex justify-center items-center text-white text-xs ml-auto mr-2">
-                  {index}
+                  {unseenMessages[user._id]}
                 </p>
               )}
             </div>
