@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import assets from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -9,6 +10,14 @@ const ProfilePage = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
 
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -16,16 +25,37 @@ const ProfilePage = () => {
       setPreviewImage(URL.createObjectURL(file));
     }
   };
+  const { authUser, updateProfile } = useContext(AuthContext);
 
-  const handleSubmit = (e) => {
+  // prefill form from authenticated user
+  useEffect(() => {
+    if (authUser) {
+      setFullName(authUser.fullName ?? "");
+      setBio(authUser.bio ?? "");
+      setPreviewImage(authUser.profilePic ?? "");
+    }
+  }, [authUser]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Handle profile update logic here
-    console.log({ fullName, bio, profileImage });
-  };
-
-  const handleSubmitOnSave = (e) => {
-    e.preventDefault();
-    navigate("/");
+    try {
+      let profilePicBase64;
+      if (profileImage) {
+        profilePicBase64 = await fileToBase64(profileImage);
+      }
+      const payload = {
+        fullName,
+        bio,
+        ...(profilePicBase64 ? { profilePic: profilePicBase64 } : {}),
+      };
+      const res = await updateProfile(payload);
+      if (res?.success) {
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Profile update failed:", err);
+    }
   };
 
   return (
@@ -94,7 +124,6 @@ const ProfilePage = () => {
           <button
             type="submit"
             className="py-3 bg-violet-500 w-full rounded-lg text-white cursor-pointer hover:bg-violet-400 transition-colors"
-            onClick={handleSubmitOnSave}
           >
             Save Changes
           </button>
