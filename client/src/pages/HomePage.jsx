@@ -4,7 +4,7 @@ import ChatContainer from "../components/ChatContainer.jsx";
 import RightSidebar from "../components/RightSidebar";
 
 const HomePage = () => {
-  const [selectedUser, setSelectedUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   return (
     <div className="min-h-screen w-full p-4 flex justify-center ">
       <div
