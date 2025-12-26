@@ -1,5 +1,3 @@
-//signup a new user
-
 import cloudinary from "../lib/cloudinary.js";
 import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
@@ -100,4 +98,8 @@ export const updateProfile = async (req, res) => {
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
+};
+
+export const logout = async (req, res) => {
+  res.json({ success: true, message: "Logged out" });
 };
