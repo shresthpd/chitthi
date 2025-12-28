@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
+import toast from "react-hot-toast";
 
 export const ChatContext = createContext();
 export const ChatProvider = ({ children }) => {
@@ -37,17 +38,29 @@ export const ChatProvider = ({ children }) => {
 
   // function to send a message
   const sendMessage = async (message) => {
+    if (!selectedUser?._id) {
+      toast.error("Please select a user to chat with.");
+      return;
+    }
+
     try {
-      const { data } = await axios.post(`/api/messages/${selectedUser._id}`, {
-        message,
-      });
+      const payload = typeof message === "string" ? { text: message } : message;
+
+      const { data } = await axios.post(
+        `/api/messages/send/${selectedUser._id}`,
+        payload
+      );
+
       if (data.success) {
-        setMessages((prevMessages) => [...prevMessages, data.message]);
+        setMessages((prevMessages) => [...prevMessages, data.newMessage]);
       } else {
-        toast.error(data.message);
+        console.log(data.message);
+        toast.error(data.message || "Failed to send message");
       }
     } catch (error) {
-      toast.error(error.response.data.message);
+      console.log(error);
+      const msg = error?.response?.data?.message || "Failed to send message";
+      toast.error(msg);
     }
   };
 
@@ -55,15 +68,15 @@ export const ChatProvider = ({ children }) => {
   const subscribeToMessages = () => {
     if (!socket) return;
     socket.on("newMessage", (newMessage) => {
-      if (selectedUser && newMessage.sender._id === selectedUser._id) {
+      if (selectedUser && newMessage.senderId === selectedUser._id) {
         newMessage.seen = true;
         setMessages((prevMessages) => [...prevMessages, newMessage]);
         axios.put(`/api/messages/mark/${newMessage._id}`);
       } else {
         setUnseenMessages((prevUnseenMessages) => ({
           ...prevUnseenMessages,
-          [newMessage.sender._id]:
-            (prevUnseenMessages[newMessage.sender._id] || 0) + 1,
+          [newMessage.senderId]:
+            (prevUnseenMessages[newMessage.senderId] || 0) + 1,
         }));
       }
     });
