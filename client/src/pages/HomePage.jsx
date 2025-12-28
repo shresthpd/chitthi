@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Sidebar from "../components/Sidebar.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
 import RightSidebar from "../components/RightSidebar";
+import { ChatContext } from "../../context/ChatContext.jsx";
 
 const HomePage = () => {
-  const [selectedUser, setSelectedUser] = useState(null);
+  const { selectedUser } = useContext(ChatContext);
   return (
     <div className="min-h-screen w-full p-4 flex justify-center ">
       <div
@@ -13,21 +14,10 @@ const HomePage = () => {
         } w-[80%] h-[calc(100vh-2rem)] rounded-lg bg-gray-400/10 backdrop-blur-lg border border-gray-100/20 shadow-lg`}
       >
         <div className="bg-white/5 rounded-l-lg">
-          <Sidebar
-            selectedUser={selectedUser}
-            setSelectedUser={setSelectedUser}
-          />
+          <Sidebar />
         </div>
-        <ChatContainer
-          selectedUser={selectedUser}
-          setSelectedUser={setSelectedUser}
-        />
-        {selectedUser && (
-          <RightSidebar
-            selectedUser={selectedUser}
-            setSelectedUser={setSelectedUser}
-          />
-        )}
+        <ChatContainer />
+        {selectedUser && <RightSidebar />}
       </div>
     </div>
   );
