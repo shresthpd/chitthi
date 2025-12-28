@@ -96,7 +96,8 @@ const Sidebar = () => {
         ) : (
           filteredUsers.map((user) => (
             <div
-              key={user._id} // updated
+              key={user._id}
+              onClick={() => handleSelectUser(user)}
               className={`flex items-center gap-3 p-2 cursor-pointer hover:bg-slate-700/50 rounded-lg transition-colors ${
                 selectedUser?._id === user._id ? "bg-[#282142]/50" : ""
               }`}
