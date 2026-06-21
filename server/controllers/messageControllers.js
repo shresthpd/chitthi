@@ -8,19 +8,17 @@ export const getUsersForSidebar = async (req, res) => {
   try {
     const userId = req.user._id;
     const filteredUsers = await User.find({ _id: { $ne: userId } }).select(
-      "-password"
+      "-password",
     );
-    // count no. of unread messages
+    // count unseen messages per sender
+    const unseenCounts = await Message.aggregate([
+      { $match: { receiverId: userId, seen: false } },
+      { $group: { _id: "$senderId", count: { $sum: 1 } } },
+    ]);
     const unseenMessages = {};
-    const promises = filteredUsers.map(async (user) => {
-      const messages = await Message.find({
-        senderId: user._id,
-        receiverId: userId,
-        seen: false,
-      });
-      unseenMessages[user._id] = messages.length;
+    unseenCounts.forEach(({ _id, count }) => {
+      unseenMessages[_id] = count;
     });
-    await Promise.all(promises);
     res.json({
       success: true,
       users: filteredUsers,
@@ -38,7 +36,9 @@ export const getMessages = async (req, res) => {
     const { id: selectedUserId } = req.params;
     const myId = req.user._id;
     if (!selectedUserId) {
-      return res.status(400).json({ success: false, message: "Selected user id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Selected user id is required" });
     }
     const messages = await Message.find({
       $or: [
@@ -53,7 +53,7 @@ export const getMessages = async (req, res) => {
       },
       {
         seen: true,
-      }
+      },
     );
     res.json({ success: true, messages });
   } catch (error) {
@@ -67,11 +67,15 @@ export const markMessageSeen = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
-      return res.status(400).json({ success: false, message: "Message id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Message id is required" });
     }
     const updated = await Message.findByIdAndUpdate(id, { seen: true });
     if (!updated) {
-      return res.status(404).json({ success: false, message: "Message not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" });
     }
     res.json({ success: true });
   } catch (error) {
@@ -86,14 +90,23 @@ export const sendMessage = async (req, res) => {
     const { text, image } = req.body;
     const receiverId = req.params.id;
     if (!receiverId) {
-      return res.status(400).json({ success: false, message: "Receiver id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Receiver id is required" });
     }
     if (!text && !image) {
-      return res.status(400).json({ success: false, message: "Message content is required (text or image)" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Message content is required (text or image)",
+        });
     }
     const receiverExists = await User.exists({ _id: receiverId });
     if (!receiverExists) {
-      return res.status(404).json({ success: false, message: "Receiver not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Receiver not found" });
     }
 
     const senderId = req.user._id;

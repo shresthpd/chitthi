@@ -20,11 +20,11 @@ export const ChatProvider = ({ children }) => {
         setUnseenMessages(data.unseenMessages);
       }
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || "Failed to load users");
     }
   };
 
-  // funcion to get messages for a user
+  // function to get messages for a user
   const getMessages = async (userId) => {
     try {
       const { data } = await axios.get(`/api/messages/${userId}`);
@@ -32,7 +32,7 @@ export const ChatProvider = ({ children }) => {
         setMessages(data.messages);
       }
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || "Failed to load messages");
     }
   };
 

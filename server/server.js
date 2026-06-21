@@ -11,10 +11,13 @@ import jwt from "jsonwebtoken";
 const app = express();
 const server = http.createServer(app);
 
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL || "http://localhost:5173";
+
 // socket.io initialization
 export const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: ALLOWED_ORIGIN,
+    credentials: true,
   },
 });
 
@@ -31,10 +34,15 @@ io.on("connection", (socket) => {
       userId = decoded.userId;
     } catch (e) {
       console.log("Socket auth failed", e.message);
+      socket.disconnect();
+      return;
     }
+  } else {
+    socket.disconnect();
+    return;
   }
   console.log("user connected", userId);
-  if (userId) userSocketMap[userId] = socket.id;
+  userSocketMap[userId] = socket.id;
 
   // emit online users to all connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
@@ -47,7 +55,7 @@ io.on("connection", (socket) => {
 
 // middlewares
 app.use(express.json({ limit: "5mb" }));
-app.use(cors());
+app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
 
 // routes
 app.use("/api/status", (req, res) => res.send("Server is Running"));
